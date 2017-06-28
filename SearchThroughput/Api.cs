@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 
 using Newtonsoft.Json.Linq;
@@ -43,8 +44,12 @@ namespace SearchThroughput
         public void PostDocuments(List<object> documents)
         {
             var request = new { value = documents };
-            this.client.PostAsync($"/indexes/test/docs/index?api-version={this.apiVersion}", request.ToJsonBody())
+            var response = this.client.PostAsync($"/indexes/test/docs/index?api-version={this.apiVersion}", request.ToJsonBody())
                 .Result.EnsureSuccessStatusCode();
+            if (response.StatusCode != HttpStatusCode.OK && response.StatusCode != HttpStatusCode.Created)
+            {
+                throw new Exception("Partial failure");
+            }
         }
     }
 }

@@ -10,7 +10,7 @@ namespace SearchThroughput
     {
         public static void Main(string[] args)
         {
-            var documentSizeKiB = 0.5;
+            var documentSizeKiB = 1;
             int nthreads = 4;
             int maxDocumentCount = (int)((10 / documentSizeKiB + 1) * 10000);
 
@@ -25,7 +25,7 @@ namespace SearchThroughput
 #if S3
             var api = new Api("https://dk-test-pref-1.search.windows.net", "182625CF80F4413FFDC04FD35A4437F9", "test");
 #else
-            var api = new Api("https://dk-test-perf-s1.search.windows.net", "B0319F590B98743B3433B9C34BF2FE7B", "test");
+            var api = new Api("https://dk-marketplace-1-f3589d-as.search.windows.net", "27578EBF4561D561C6FC58EE37223156", "test");
 #endif
             var schema =
                 new
@@ -46,6 +46,7 @@ namespace SearchThroughput
             var cts = new CancellationTokenSource();
 
             string uniqueId = Guid.NewGuid().ToString("n");
+            Console.WriteLine($"Unique tag: {uniqueId}");
             var monitor = new Monitor(uniqueId, api);
 
             for (int t = 0; t < tasks.Length; t++)
@@ -74,7 +75,20 @@ namespace SearchThroughput
                                 }
 
                                 var start = time.Elapsed;
-                                api.PostDocuments(documents);
+                                bool success = false;
+                                while (!success)
+                                {
+                                    try
+                                    {
+                                        api.PostDocuments(documents);
+                                        success = true;
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Console.WriteLine(e.Message);
+                                        Thread.Sleep(TimeSpan.FromSeconds(0.5));
+                                    }
+                                }
                                 monitor.AddRequest(time.Elapsed - start);
                                 monitor.DocumentsAdded(documents.Count);
                             }
